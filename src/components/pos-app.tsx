@@ -132,7 +132,6 @@ function Analytics({ mode, setMode, dailyDate, setDailyDate, month, setMonth, ye
       { key: 'afternoon', label: 'Afternoon', time: '11 AM – 3 PM', start: 11, end: 15 },
       { key: 'evening', label: 'Evening', time: '3 PM – 7 PM', start: 15, end: 19 },
       { key: 'night', label: 'Night', time: '7 PM – 11 PM', start: 19, end: 23 },
-      { key: 'late', label: 'Late night', time: '11 PM – 3 AM', start: 23, end: 27 },
     ];
     return periods.map((period) => {
       const matched = sales.filter((sale) => { const d = new Date(sale.timestamp); const hour = d.getHours(); const businessHour = hour < 3 ? hour + 24 : hour; return businessHour >= period.start && businessHour < period.end; });
