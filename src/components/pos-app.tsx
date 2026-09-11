@@ -5,10 +5,35 @@ import { BarChart3, Clock3, LayoutGrid, Menu, Minus, Plus, Receipt, Settings2, S
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { demoProducts, demoSales } from '@/lib/demo-data';
 import type { Product, Sale } from '@/lib/types';
-import { BUSINESS_DAY_RESET_HOUR, businessDayKey, formatBusinessDay, isInBusinessDay } from '@/lib/business-day';
+import { BUSINESS_DAY_RESET_HOUR, businessDayBounds, businessDayKey, formatBusinessDay, isInBusinessDay } from '@/lib/business-day';
 
 type Tab = 'counter' | 'history' | 'analytics' | 'menu';
+type AnalyticsMode = 'daily' | 'monthly' | 'custom' | 'yearly';
 const money = (n: number) => `₹${n.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+const localMonthKey = (key: string) => key.slice(0, 7);
+const localYearKey = (key: string) => key.slice(0, 4);
+
+function rangeForMode(mode: AnalyticsMode, dailyKey: string, monthKey: string, yearKey: string, customStart: string, customEnd: string) {
+  if (mode === 'daily') {
+    return businessDayBounds(dailyKey);
+  }
+  if (mode === 'monthly') {
+    const [year, month] = monthKey.split('-').map(Number);
+    const startKey = `${year}-${String(month).padStart(2, '0')}-01`;
+    const next = new Date(year, month, 1);
+    const endKey = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-01`;
+    return { start: businessDayBounds(startKey).start, end: businessDayBounds(endKey).start };
+  }
+  if (mode === 'yearly') {
+    const year = Number(yearKey);
+    return { start: businessDayBounds(`${year}-01-01`).start, end: businessDayBounds(`${year + 1}-01-01`).start };
+  }
+  const start = customStart || dailyKey;
+  const end = customEnd || start;
+  const normalizedStart = start <= end ? start : end;
+  const normalizedEnd = start <= end ? end : start;
+  return { start: businessDayBounds(normalizedStart).start, end: businessDayBounds(normalizedEnd).end };
+}
 
 export default function PosApp() {
   const [tab, setTab] = useState<Tab>('counter');
@@ -18,13 +43,22 @@ export default function PosApp() {
   const [customPrice, setCustomPrice] = useState('');
   const currentBusinessDay = businessDayKey();
   const [historyDate, setHistoryDate] = useState(currentBusinessDay);
-  const [analyticsDate, setAnalyticsDate] = useState(currentBusinessDay);
+  const [analyticsMode, setAnalyticsMode] = useState<AnalyticsMode>('daily');
+  const [analyticsDailyDate, setAnalyticsDailyDate] = useState(currentBusinessDay);
+  const [analyticsMonth, setAnalyticsMonth] = useState(localMonthKey(currentBusinessDay));
+  const [analyticsYear, setAnalyticsYear] = useState(localYearKey(currentBusinessDay));
+  const [analyticsCustomStart, setAnalyticsCustomStart] = useState(currentBusinessDay);
+  const [analyticsCustomEnd, setAnalyticsCustomEnd] = useState(currentBusinessDay);
   const [editing, setEditing] = useState<Product | null>(null);
   const todayKey = currentBusinessDay;
   const todaySales = sales.filter((s) => isInBusinessDay(s.timestamp, todayKey));
   const liveTotal = useMemo(() => todaySales.reduce((a, b) => a + b.price_charged, 0), [todaySales]);
   const history = sales.filter((s) => isInBusinessDay(s.timestamp, historyDate)).sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-  const analyticsSales = sales.filter((s) => isInBusinessDay(s.timestamp, analyticsDate));
+  const analyticsRange = rangeForMode(analyticsMode, analyticsDailyDate, analyticsMonth, analyticsYear, analyticsCustomStart, analyticsCustomEnd);
+  const analyticsSales = sales.filter((s) => {
+    const time = new Date(s.timestamp).getTime();
+    return time >= analyticsRange.start.getTime() && time < analyticsRange.end.getTime();
+  });
   const revenue = analyticsSales.reduce((a, b) => a + b.price_charged, 0);
   const profit = analyticsSales.reduce((a, b) => a + b.profit_recorded, 0);
   const dailyCounts = useMemo(() => Object.fromEntries(products.map((p) => [p.id, todaySales.filter((s) => s.product_id === p.id).length])), [products, todaySales]);
@@ -65,7 +99,7 @@ export default function PosApp() {
       <div className="mx-auto max-w-7xl px-4 pt-4 md:px-6">
         {tab === 'counter' && <Counter products={products.map((p) => ({ ...p, daily_count: dailyCounts[p.id] ?? 0 }))} liveTotal={liveTotal} addSale={addSale} removeSale={removeSale} onCustom={() => setCustomOpen(true)} businessDay={todayKey} />}
         {tab === 'history' && <History date={historyDate} setDate={setHistoryDate} rows={history} />}
-        {tab === 'analytics' && <Analytics date={analyticsDate} setDate={setAnalyticsDate} revenue={revenue} profit={profit} top={top} />}
+        {tab === 'analytics' && <Analytics mode={analyticsMode} setMode={setAnalyticsMode} dailyDate={analyticsDailyDate} setDailyDate={setAnalyticsDailyDate} month={analyticsMonth} setMonth={setAnalyticsMonth} year={analyticsYear} setYear={setAnalyticsYear} customStart={analyticsCustomStart} setCustomStart={setAnalyticsCustomStart} customEnd={analyticsCustomEnd} setCustomEnd={setAnalyticsCustomEnd} range={analyticsRange} sales={analyticsSales} revenue={revenue} profit={profit} top={top} />}
         {tab === 'menu' && <MenuManager products={products} setProducts={setProducts} editing={editing} setEditing={setEditing} />}
       </div>
 
@@ -104,8 +138,54 @@ function History({ date, setDate, rows }: { date: string; setDate: (x: string) =
   return <section><div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between"><div><p className="text-xs uppercase tracking-widest text-slate-500">Business-day transaction feed</p><h2 className="mt-1 text-2xl font-semibold">History</h2></div><input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-sm"/></div><div className="space-y-2">{rows.map((s, i) => <div key={s.id} className="glass flex items-center justify-between rounded-2xl px-4 py-3"><div className="flex items-center gap-3"><div className="grid h-9 w-9 place-items-center rounded-xl bg-sky-400/10 text-sky-300">{i + 1}</div><div><p className="font-medium">{s.product_name}</p><p className="text-xs text-slate-500">{new Date(s.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p></div></div><div className="text-right"><p className="font-semibold">{money(s.price_charged)}</p><p className="text-xs text-slate-500">Profit {money(s.profit_recorded)}</p></div></div>)}{!rows.length && <div className="glass rounded-3xl p-10 text-center text-slate-500">No sales on this date.</div>}</div></section>;
 }
 
-function Analytics({ date, setDate, revenue, profit, top }: { date: string; setDate: (x: string) => void; revenue: number; profit: number; top: { name: string; count: number; profit: number }[] }) {
-  return <section><div className="mb-5 flex items-end justify-between"><div><p className="text-xs uppercase tracking-widest text-slate-500">Business-day performance dashboard</p><h2 className="mt-1 text-2xl font-semibold">Analytics</h2></div><input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-sm"/></div><div className="grid gap-3 md:grid-cols-2"><Metric label="Total Revenue" value={money(revenue)}/><Metric label="Total Profit" value={money(profit)}/></div><div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_.8fr]"><div className="glass rounded-3xl p-5"><h3 className="font-semibold">Top selling items</h3><div className="mt-4 h-72"><ResponsiveContainer width="100%" height="100%"><BarChart data={top}><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.06)"/><XAxis dataKey="name" stroke="#64748b" fontSize={11}/><YAxis stroke="#64748b" fontSize={11}/><Tooltip contentStyle={{ background: '#07101d', border: '1px solid rgba(255,255,255,.1)' }}/><Bar dataKey="count" fill="#38bdf8" radius={[6, 6, 0, 0]}/></BarChart></ResponsiveContainer></div></div><div className="glass rounded-3xl p-5"><h3 className="font-semibold">Highest profit yield</h3><div className="mt-4 space-y-3">{[...top].sort((a, b) => b.profit - a.profit).map((x, i) => <div key={x.name} className="flex items-center justify-between rounded-2xl bg-white/[.03] p-3"><div><p className="font-medium">{i + 1}. {x.name}</p><p className="text-xs text-slate-500">{x.count} units</p></div><span className="font-semibold text-sky-300">{money(x.profit)}</span></div>)}</div></div></div></section>;
+function Analytics({ mode, setMode, dailyDate, setDailyDate, month, setMonth, year, setYear, customStart, setCustomStart, customEnd, setCustomEnd, range, sales, revenue, profit, top }: { mode: AnalyticsMode; setMode: (x: AnalyticsMode) => void; dailyDate: string; setDailyDate: (x: string) => void; month: string; setMonth: (x: string) => void; year: string; setYear: (x: string) => void; customStart: string; setCustomStart: (x: string) => void; customEnd: string; setCustomEnd: (x: string) => void; range: { start: Date; end: Date }; sales: Sale[]; revenue: number; profit: number; top: { name: string; count: number; profit: number }[] }) {
+  const rangeDays = Math.max(1, Math.round((range.end.getTime() - range.start.getTime()) / 86400000));
+  const trend = useMemo(() => {
+    const buckets = new Map<string, { label: string; revenue: number; profit: number }>();
+    const add = (key: string, label: string, sale: Sale) => {
+      const current = buckets.get(key) ?? { label, revenue: 0, profit: 0 };
+      current.revenue += sale.price_charged;
+      current.profit += sale.profit_recorded;
+      buckets.set(key, current);
+    };
+    sales.forEach((sale) => {
+      const day = businessDayKey(new Date(sale.timestamp));
+      if (mode === 'yearly') {
+        const key = localMonthKey(day);
+        const date = new Date(`${key}-01T12:00:00`);
+        add(key, date.toLocaleDateString('en-IN', { month: 'short' }), sale);
+      } else {
+        add(day, new Date(`${day}T12:00:00`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }), sale);
+      }
+    });
+    return [...buckets.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, value]) => value);
+  }, [mode, sales]);
+
+  const modeLabel = mode === 'daily' ? 'Daily' : mode === 'monthly' ? 'Monthly' : mode === 'yearly' ? 'Yearly' : 'Custom range';
+  return <section>
+    <div className="mb-5">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div><p className="text-xs uppercase tracking-widest text-slate-500">Business-day performance dashboard</p><h2 className="mt-1 text-2xl font-semibold">Analytics</h2></div>
+        <div className="grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-white/[.03] p-1">
+          {(['daily', 'monthly', 'custom', 'yearly'] as AnalyticsMode[]).map((item) => <button key={item} onClick={() => setMode(item)} className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${mode === item ? 'bg-sky-400 text-slate-950' : 'text-slate-400 hover:text-white'}`}>{item[0].toUpperCase() + item.slice(1)}</button>)}
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-3xl border border-white/10 bg-white/[.025] p-4">
+        {mode === 'daily' && <div className="flex flex-col gap-2"><label className="text-[10px] uppercase tracking-widest text-slate-500">Business day</label><input type="date" value={dailyDate} onChange={(e) => setDailyDate(e.target.value)} className="w-full rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-sm"/></div>}
+        {mode === 'monthly' && <div className="flex flex-col gap-2"><label className="text-[10px] uppercase tracking-widest text-slate-500">Select month</label><input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-full rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-sm"/><p className="text-xs text-slate-500">Includes every business day from 03:00 AM on the 1st through 02:59 AM on the next month.</p></div>}
+        {mode === 'yearly' && <div className="flex flex-col gap-2"><label className="text-[10px] uppercase tracking-widest text-slate-500">Select year</label><select value={year} onChange={(e) => setYear(e.target.value)} className="w-full rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-sm"><option value={String(Number(year) - 2)}>{Number(year) - 2}</option><option value={String(Number(year) - 1)}>{Number(year) - 1}</option><option value={year}>{year}</option><option value={String(Number(year) + 1)}>{Number(year) + 1}</option><option value={String(Number(year) + 2)}>{Number(year) + 2}</option></select></div>}
+        {mode === 'custom' && <div><div className="grid gap-3 md:grid-cols-2"><div className="flex flex-col gap-2"><label className="text-[10px] uppercase tracking-widest text-slate-500">From</label><input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="w-full rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-sm"/></div><div className="flex flex-col gap-2"><label className="text-[10px] uppercase tracking-widest text-slate-500">To</label><input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="w-full rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-sm"/></div></div><p className="mt-2 text-xs text-slate-500">Custom reports use the same 03:00 AM business-day boundary.</p></div>}
+      </div>
+    </div>
+
+    <div className="grid gap-3 sm:grid-cols-3"><Metric label="Total Revenue" value={money(revenue)}/><Metric label="Total Profit" value={money(profit)}/><Metric label="Transactions" value={sales.length.toLocaleString('en-IN')}/></div>
+    <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_.8fr]">
+      <div className="glass rounded-3xl p-5"><div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold">Revenue trend</h3><p className="mt-1 text-xs text-slate-500">{modeLabel} · {rangeDays} day{rangeDays === 1 ? '' : 's'}</p></div><span className="rounded-full bg-sky-400/10 px-3 py-1 text-[10px] font-semibold text-sky-300">{money(revenue)}</span></div><div className="mt-4 h-72">{trend.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={trend}><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.06)"/><XAxis dataKey="label" stroke="#64748b" fontSize={10}/><YAxis stroke="#64748b" fontSize={10}/><Tooltip contentStyle={{ background: '#07101d', border: '1px solid rgba(255,255,255,.1)' }} formatter={(value) => money(Number(value))}/><Bar dataKey="revenue" fill="#38bdf8" radius={[6, 6, 0, 0]}/></BarChart></ResponsiveContainer> : <div className="grid h-full place-items-center text-sm text-slate-500">No sales in this period.</div>}</div></div>
+      <div className="glass rounded-3xl p-5"><h3 className="font-semibold">Top selling items</h3><div className="mt-4 h-72">{top.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={top} layout="vertical" margin={{ left: 8, right: 12 }}><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.06)"/><XAxis type="number" stroke="#64748b" fontSize={10}/><YAxis type="category" dataKey="name" width={70} stroke="#64748b" fontSize={10}/><Tooltip contentStyle={{ background: '#07101d', border: '1px solid rgba(255,255,255,.1)' }}/><Bar dataKey="count" fill="#38bdf8" radius={[0, 6, 6, 0]}/></BarChart></ResponsiveContainer> : <div className="grid h-full place-items-center text-sm text-slate-500">No product sales in this period.</div>}</div></div>
+    </div>
+    <div className="glass mt-4 rounded-3xl p-5"><h3 className="font-semibold">Highest profit yield</h3><div className="mt-4 grid gap-2 md:grid-cols-2 lg:grid-cols-3">{[...top].sort((a, b) => b.profit - a.profit).map((x, i) => <div key={x.name} className="flex items-center justify-between rounded-2xl bg-white/[.03] p-3"><div><p className="font-medium">{i + 1}. {x.name}</p><p className="text-xs text-slate-500">{x.count} units</p></div><span className="font-semibold text-sky-300">{money(x.profit)}</span></div>)}{!top.length && <p className="text-sm text-slate-500">No profit data for this period.</p>}</div></div>
+  </section>;
 }
 
 function Metric({ label, value }: { label: string; value: string }) { return <div className="glass glow rounded-3xl p-5"><p className="text-xs uppercase tracking-widest text-slate-500">{label}</p><p className="mt-2 text-3xl font-semibold">{value}</p></div>; }
@@ -113,5 +193,5 @@ function Metric({ label, value }: { label: string; value: string }) { return <di
 function MenuManager({ products, setProducts, editing, setEditing }: { products: Product[]; setProducts: React.Dispatch<React.SetStateAction<Product[]>>; editing: Product | null; setEditing: (p: Product | null) => void }) {
   const [draft, setDraft] = useState<Product>(editing ?? { id: '', name: '', price: 0, profit_margin: 0, image_url: '', daily_count: 0 });
   const save = () => { if (!draft.name || !draft.price) return; if (draft.id) setProducts((ps) => ps.map((x) => x.id === draft.id ? { ...draft, daily_count: x.daily_count } : x)); else setProducts((ps) => [...ps, { ...draft, id: crypto.randomUUID(), daily_count: 0 }]); setEditing(null); setDraft({ id: '', name: '', price: 0, profit_margin: 0, image_url: '', daily_count: 0 }); };
-  return <section><div className="mb-5 flex items-center justify-between"><div><p className="text-xs uppercase tracking-widest text-slate-500">Admin inventory</p><h2 className="mt-1 text-2xl font-semibold">Menu Manager</h2></div><Settings2 className="text-sky-300"/></div><div className="grid gap-4 lg:grid-cols-[.9fr_1.1fr]"><div className="glass rounded-3xl p-5"><h3 className="font-semibold">{editing ? 'Edit product' : 'Add product'}</h3><div className="mt-4 space-y-3">{([['name', 'Product Name', 'text'], ['price', 'Selling Price', 'number'], ['profit_margin', 'Profit Margin', 'number'], ['image_url', 'Image URL', 'url']] as const).map(([key, lab, type]) => <label key={key} className="block text-sm text-slate-400">{lab}<input value={(draft as any)[key]} onChange={(e) => setDraft({ ...draft, [key]: type === 'number' ? Number(e.target.value) : e.target.value })} type={type} className="mt-2 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white"/></label>)}</div><div className="mt-4 flex items-center gap-2 rounded-2xl border border-dashed border-white/10 p-4 text-sm text-slate-500"><UploadCloud size={17}/> Image storage hook ready for Supabase Storage</div><div className="mt-4 flex gap-2"><button onClick={save} className="flex-1 rounded-2xl bg-sky-400 py-3 font-semibold text-slate-950">{editing ? 'Save changes' : 'Create product'}</button>{editing && <button onClick={() => setEditing(null)} className="rounded-2xl border border-white/10 px-4">Cancel</button>}</div></div><div className="space-y-2">{products.map((p) => <div key={p.id} className="glass flex items-center gap-3 rounded-2xl p-3"><div className="h-12 w-12 overflow-hidden rounded-xl bg-slate-900">{p.image_url && <img src={p.image_url} alt="" className="h-full w-full object-cover"/>}</div><div className="min-w-0 flex-1"><p className="truncate font-medium">{p.name}</p><p className="text-xs text-slate-500">{money(p.price)} · {money(p.profit_margin)} margin</p></div><button onClick={() => { setEditing(p); setDraft(p); }} className="rounded-xl border border-white/10 p-2 text-slate-300">Edit</button><button onClick={() => setProducts((ps) => ps.filter((x) => x.id !== p.id))} className="rounded-xl border border-red-400/20 p-2 text-red-300"><Trash2 size={16}/></button></div>)}</div></div></section>;
+  return <section><div className="mb-5 flex items-center justify-between"><div><p className="text-xs uppercase tracking-widest text-slate-500">Admin inventory</p><h2 className="mt-1 text-2xl font-semibold">Menu Manager</h2></div><Settings2 className="text-sky-300"/></div><div className="grid gap-4 lg:grid-cols-[.9fr_1.1fr]"><div className="glass rounded-3xl p-5"><h3 className="font-semibold">{editing ? 'Edit product' : 'Add product'}</h3><div className="mt-4 space-y-3"><input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Product name" className="w-full rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3"/><div className="grid grid-cols-2 gap-3"><input type="number" value={draft.price || ''} onChange={(e) => setDraft({ ...draft, price: Number(e.target.value) })} placeholder="Selling price" className="w-full rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3"/><input type="number" value={draft.profit_margin || ''} onChange={(e) => setDraft({ ...draft, profit_margin: Number(e.target.value) })} placeholder="Profit" className="w-full rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3"/></div><input value={draft.image_url ?? ''} onChange={(e) => setDraft({ ...draft, image_url: e.target.value })} placeholder="Image URL" className="w-full rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3"/><button onClick={save} className="w-full rounded-2xl bg-sky-400 py-3 font-semibold text-slate-950">{editing ? 'Save changes' : 'Create product'}</button>{editing && <button onClick={() => { setEditing(null); setDraft({ id: '', name: '', price: 0, profit_margin: 0, image_url: '', daily_count: 0 }); }} className="w-full rounded-2xl border border-white/10 py-3 text-sm text-slate-300">Cancel</button>}</div></div><div className="space-y-2">{products.map((p) => <div key={p.id} className="glass flex items-center gap-3 rounded-2xl p-3"><div className="h-14 w-14 overflow-hidden rounded-xl bg-slate-900">{p.image_url ? <img src={p.image_url} alt="" className="h-full w-full object-cover"/> : <div className="grid h-full place-items-center text-[10px] text-slate-600">No image</div>}</div><div className="min-w-0 flex-1"><p className="truncate font-medium">{p.name}</p><p className="text-xs text-slate-500">{money(p.price)} · Profit {money(p.profit_margin)}</p></div><button onClick={() => { setEditing(p); setDraft(p); }} className="rounded-xl border border-white/10 p-2 text-slate-300"><Settings2 size={16}/></button><button onClick={() => setProducts((ps) => ps.filter((x) => x.id !== p.id))} className="rounded-xl border border-red-400/20 p-2 text-red-300"><Trash2 size={16}/></button></div>)}{!products.length && <div className="glass rounded-3xl p-8 text-center text-slate-500">No products yet.</div>}</div></div></section>;
 }
