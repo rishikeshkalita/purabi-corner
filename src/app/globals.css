@@ -17,3 +17,9 @@ button.fixed.bottom-24.right-5{position:static!important;display:block;margin:1r
 
 /* iPhone safe-area support for the persistent navigation. */
 nav.fixed.bottom-0{padding-bottom:env(safe-area-inset-bottom)}
+
+/* Three product cards per row on phones. */
+@media (max-width:767px){
+  section > .grid.grid-cols-2{grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem}
+  section > .grid.grid-cols-2 > div{min-width:0}
+}
