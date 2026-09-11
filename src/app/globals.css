@@ -8,17 +8,10 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#f4f7fb;overflow:hidd
 *{box-sizing:border-box}
 .glass{background:linear-gradient(180deg,rgba(13,22,39,.88),rgba(7,13,25,.88));border:1px solid rgba(67,151,235,.16);backdrop-filter:blur(16px)}
 .glow{box-shadow:0 0 0 1px rgba(46,168,255,.14),0 0 32px rgba(46,168,255,.08)}
-
-/* Keep the POS inside the mobile viewport. Only the app content scrolls. */
 main.min-h-screen{height:100dvh;min-height:100dvh;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;padding-bottom:max(7rem,calc(env(safe-area-inset-bottom) + 6rem))!important;-webkit-overflow-scrolling:touch}
-
-/* The custom-item action belongs below the product grid, so it can never cover a product's Sell button. */
 button.fixed.bottom-24.right-5{position:static!important;display:block;margin:1rem 0 0 auto;right:auto!important;bottom:auto!important}
-
-/* iPhone safe-area support for the persistent navigation. */
 nav.fixed.bottom-0{padding-bottom:env(safe-area-inset-bottom)}
 
-/* Mobile POS polish: compact three-column product cards. */
 @media (max-width:767px){
   header.sticky{position:relative!important;top:auto!important}
   main.min-h-screen{padding-bottom:max(6.5rem,calc(env(safe-area-inset-bottom) + 5.5rem))!important}
@@ -26,7 +19,6 @@ nav.fixed.bottom-0{padding-bottom:env(safe-area-inset-bottom)}
   header h1{font-size:1.35rem!important;line-height:1.2!important}
   section{padding-bottom:.75rem}
 
-  /* Counter product grid only. */
   section > div.grid.grid-cols-2.gap-3{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:.55rem!important}
   section > div.grid.grid-cols-2.gap-3 > div{padding:.5rem!important;border-radius:1.25rem!important;min-width:0}
   section > div.grid.grid-cols-2.gap-3 > div > div:first-child{aspect-ratio:1.7!important;border-radius:1rem!important}
@@ -40,18 +32,43 @@ nav.fixed.bottom-0{padding-bottom:env(safe-area-inset-bottom)}
   section > div.grid.grid-cols-2.gap-3 > div .mt-3 button:last-child{font-size:.78rem!important;min-width:0!important;padding:0 .35rem!important;white-space:nowrap}
   section > div.grid.grid-cols-2.gap-3 > div .mt-3 button:last-child svg{width:15px!important;height:15px!important}
 
-  /* Daily total card: tighter and easier to scan on a phone. */
   section > .glass.glow{margin-bottom:1rem!important;border-radius:1.35rem!important;padding:1rem!important}
   section > .glass.glow .text-4xl{font-size:2.1rem!important}
   section > .glass.glow .p-3{padding:.6rem!important}
-
-  /* Avoid horizontal clipping in the header and business-day badge. */
   section > .glass.glow .mb-3{align-items:flex-start!important}
   section > .glass.glow .mb-3 span{font-size:.52rem!important;padding:.3rem .45rem!important;white-space:nowrap}
+
+  /* Analytics mobile layout: compact controls, denser KPI cards, and shorter charts. */
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4){padding-bottom:1.25rem!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mb-5{margin-bottom:1rem!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mb-5 > div:first-child{gap:.75rem!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) h2{font-size:2rem!important;line-height:1.1!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) .grid.grid-cols-4{width:100%!important;gap:.2rem!important;border-radius:1.25rem!important;padding:.25rem!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) .grid.grid-cols-4 button{min-height:2.8rem!important;padding:.45rem .25rem!important;border-radius:1rem!important;font-size:.72rem!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mb-5 > div.mt-4{margin-top:.75rem!important;border-radius:1.25rem!important;padding:.75rem!important;background:rgba(255,255,255,.018)!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mb-5 > div.mt-4 label{font-size:.58rem!important;letter-spacing:.16em!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mb-5 > div.mt-4 input,
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mb-5 > div.mt-4 select{height:3rem!important;border-radius:1rem!important;padding:.65rem .8rem!important;font-size:.9rem!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mb-5 > div.mt-4 p{font-size:.66rem!important;line-height:1.35!important;margin-top:.45rem!important}
+
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.grid.gap-3.sm\:grid-cols-3{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:.65rem!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.grid.gap-3.sm\:grid-cols-3 > div{padding:1rem!important;border-radius:1.35rem!important;min-height:7.2rem!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.grid.gap-3.sm\:grid-cols-3 > div:nth-child(3){grid-column:1 / -1!important;min-height:6.2rem!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.grid.gap-3.sm\:grid-cols-3 > div p.text-xs{font-size:.58rem!important;letter-spacing:.15em!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.grid.gap-3.sm\:grid-cols-3 > div p.mt-2{font-size:1.85rem!important;line-height:1!important}
+
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mt-4{margin-top:.75rem!important;gap:.75rem!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mt-4 > div{padding:1rem!important;border-radius:1.35rem!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mt-4 > div h3{font-size:.95rem!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mt-4 > div .h-72{height:14.5rem!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mt-4 > div span.rounded-full{font-size:.58rem!important;padding:.3rem .45rem!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.glass.mt-4{margin-top:.75rem!important;padding:1rem!important;border-radius:1.35rem!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.glass.mt-4 .grid{margin-top:.75rem!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.glass.mt-4 .grid > div{padding:.75rem!important}
 }
 
 @media (max-width:359px){
-  section > div.grid.grid-cols-2.gap-3{gap:.4rem!important}
-  section > div.grid.grid-cols-2.gap-3 > div{padding:.4rem!important}
+  section > div.grid.grid-cols-2.gap-3{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:.5rem!important}
+  section > div.grid.grid-cols-2.gap-3 > div{padding:.45rem!important}
   section > div.grid.grid-cols-2.gap-3 > div .mt-3 button:last-child{font-size:.7rem!important}
 }
