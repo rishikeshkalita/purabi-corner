@@ -38,17 +38,18 @@ nav.fixed.bottom-0{padding-bottom:env(safe-area-inset-bottom)}
   section > .glass.glow .mb-3{align-items:flex-start!important}
   section > .glass.glow .mb-3 span{font-size:.52rem!important;padding:.3rem .45rem!important;white-space:nowrap}
 
-  /* Analytics mobile layout: compact controls, denser KPI cards, and shorter charts. */
+  /* Analytics mobile layout. */
   section:has(> div.mb-5 > div > div.grid.grid-cols-4){padding-bottom:1.25rem!important}
   section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mb-5{margin-bottom:1rem!important}
   section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mb-5 > div:first-child{gap:.75rem!important}
   section:has(> div.mb-5 > div > div.grid.grid-cols-4) h2{font-size:2rem!important;line-height:1.1!important}
   section:has(> div.mb-5 > div > div.grid.grid-cols-4) .grid.grid-cols-4{width:100%!important;gap:.2rem!important;border-radius:1.25rem!important;padding:.25rem!important}
   section:has(> div.mb-5 > div > div.grid.grid-cols-4) .grid.grid-cols-4 button{min-height:2.8rem!important;padding:.45rem .25rem!important;border-radius:1rem!important;font-size:.72rem!important}
-  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mb-5 > div.mt-4{margin-top:.75rem!important;border-radius:1.25rem!important;padding:.75rem!important;background:rgba(255,255,255,.018)!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mb-5 > div.mt-4{margin-top:.75rem!important;border-radius:1.25rem!important;padding:.75rem!important;background:rgba(255,255,255,.018)!important;overflow:hidden!important;min-width:0!important}
   section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mb-5 > div.mt-4 label{font-size:.58rem!important;letter-spacing:.16em!important}
   section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mb-5 > div.mt-4 input,
-  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mb-5 > div.mt-4 select{height:3rem!important;border-radius:1rem!important;padding:.65rem .8rem!important;font-size:.9rem!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mb-5 > div.mt-4 select{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;height:3rem!important;border-radius:1rem!important;padding:.65rem .8rem!important;font-size:.9rem!important}
+  section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mb-5 > div.mt-4 input[type="date"]{-webkit-appearance:none!important;appearance:none!important;overflow:hidden!important}
   section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.mb-5 > div.mt-4 p{font-size:.66rem!important;line-height:1.35!important;margin-top:.45rem!important}
 
   section:has(> div.mb-5 > div > div.grid.grid-cols-4) > div.grid.gap-3.sm\:grid-cols-3{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:.65rem!important}
