@@ -14,9 +14,7 @@ const localMonthKey = (key: string) => key.slice(0, 7);
 const localYearKey = (key: string) => key.slice(0, 4);
 
 function rangeForMode(mode: AnalyticsMode, dailyKey: string, monthKey: string, yearKey: string, customStart: string, customEnd: string) {
-  if (mode === 'daily') {
-    return businessDayBounds(dailyKey);
-  }
+  if (mode === 'daily') return businessDayBounds(dailyKey);
   if (mode === 'monthly') {
     const [year, month] = monthKey.split('-').map(Number);
     const startKey = `${year}-${String(month).padStart(2, '0')}-01`;
@@ -95,27 +93,13 @@ export default function PosApp() {
           <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[.03] px-4 py-2 text-sm text-slate-300 md:flex"><Receipt size={16}/> Live shift · {todaySales.length} bills</div>
         </div>
       </header>
-
       <div className="mx-auto max-w-7xl px-4 pt-4 md:px-6">
         {tab === 'counter' && <Counter products={products.map((p) => ({ ...p, daily_count: dailyCounts[p.id] ?? 0 }))} liveTotal={liveTotal} addSale={addSale} removeSale={removeSale} onCustom={() => setCustomOpen(true)} businessDay={todayKey} />}
         {tab === 'history' && <History date={historyDate} setDate={setHistoryDate} rows={history} />}
         {tab === 'analytics' && <Analytics mode={analyticsMode} setMode={setAnalyticsMode} dailyDate={analyticsDailyDate} setDailyDate={setAnalyticsDailyDate} month={analyticsMonth} setMonth={setAnalyticsMonth} year={analyticsYear} setYear={setAnalyticsYear} customStart={analyticsCustomStart} setCustomStart={setAnalyticsCustomStart} customEnd={analyticsCustomEnd} setCustomEnd={setAnalyticsCustomEnd} range={analyticsRange} sales={analyticsSales} revenue={revenue} profit={profit} top={top} />}
         {tab === 'menu' && <MenuManager products={products} setProducts={setProducts} editing={editing} setEditing={setEditing} />}
       </div>
-
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#07101d]/95 backdrop-blur-xl">
-        <div className="mx-auto grid max-w-3xl grid-cols-4">
-          {([
-            ['counter', 'Counter', LayoutGrid],
-            ['history', 'History', Clock3],
-            ['analytics', 'Analytics', BarChart3],
-            ['menu', 'Menu', Menu],
-          ] as const).map(([k, label, Icon]) => (
-            <button key={k} onClick={() => setTab(k)} className={`flex flex-col items-center gap-1 px-2 py-3 text-xs ${tab === k ? 'text-sky-300' : 'text-slate-500'}`}><Icon size={19}/><span>{label}</span></button>
-          ))}
-        </div>
-      </nav>
-
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#07101d]/95 backdrop-blur-xl"><div className="mx-auto grid max-w-3xl grid-cols-4">{([['counter', 'Counter', LayoutGrid], ['history', 'History', Clock3], ['analytics', 'Analytics', BarChart3], ['menu', 'Menu', Menu]] as const).map(([k, label, Icon]) => <button key={k} onClick={() => setTab(k)} className={`flex flex-col items-center gap-1 px-2 py-3 text-xs ${tab === k ? 'text-sky-300' : 'text-slate-500'}`}><Icon size={19}/><span>{label}</span></button>)}</div></nav>
       {customOpen && <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 md:items-center"><div className="glass w-full max-w-md rounded-3xl p-5 shadow-2xl"><div className="mb-4 flex items-center justify-between"><h2 className="font-semibold">Custom item</h2><button onClick={() => setCustomOpen(false)}><X size={18}/></button></div><label className="text-xs text-slate-400">Price charged</label><input value={customPrice} onChange={(e) => setCustomPrice(e.target.value)} inputMode="decimal" placeholder="₹0" className="mt-2 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 outline-none focus:border-sky-400"/><button onClick={addCustom} className="mt-4 w-full rounded-2xl bg-sky-400 py-3 font-semibold text-slate-950">Add to sale</button></div></div>}
     </main>
   );
@@ -123,13 +107,8 @@ export default function PosApp() {
 
 function Counter({ products, liveTotal, addSale, removeSale, onCustom, businessDay }: { products: Product[]; liveTotal: number; addSale: (p: Product) => void; removeSale: (p: Product) => void; onCustom: () => void; businessDay: string }) {
   return <section>
-    <div className="glass glow mb-5 rounded-3xl p-5 md:p-6">
-      <div className="mb-3 flex items-center justify-between gap-3"><div><p className="text-[10px] uppercase tracking-[.2em] text-sky-400">Business Day</p><p className="text-sm font-medium">{formatBusinessDay(businessDay)}</p></div><span className="rounded-full border border-white/10 bg-white/[.03] px-3 py-1 text-[10px] text-slate-400">Resets daily · {BUSINESS_DAY_RESET_HOUR}:00 AM</span></div>
-      <div className="flex items-start justify-between"><div><p className="text-xs uppercase tracking-widest text-slate-400">Live Daily Sales Total</p><p className="mt-2 text-4xl font-semibold tracking-tight">{money(liveTotal)}</p></div><div className="rounded-2xl border border-sky-400/20 bg-sky-400/10 p-3 text-sky-300"><ShoppingBag/></div></div>
-    </div>
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-      {products.map((p) => <div key={p.id} className="glass overflow-hidden rounded-3xl p-3"><div className="aspect-[1.35] overflow-hidden rounded-2xl bg-slate-900">{p.image_url ? <img src={p.image_url} alt="" className="h-full w-full object-cover"/> : <div className="grid h-full place-items-center text-slate-600">No image</div>}</div><div className="pt-3"><div className="flex items-start justify-between gap-2"><div><p className="font-medium leading-tight">{p.name}</p><p className="mt-1 text-sm text-slate-400">{money(p.price)}</p></div><span className="rounded-full bg-sky-400/10 px-2 py-1 text-[10px] font-semibold text-sky-300">{p.daily_count} sold</span></div><div className="mt-3 flex gap-2"><button onClick={() => removeSale(p)} disabled={p.daily_count === 0} aria-label={`Remove latest ${p.name} sale`} className="grid h-11 w-11 place-items-center rounded-xl border border-white/10 bg-white/[.03] text-slate-300 disabled:cursor-not-allowed disabled:opacity-30"><Minus size={18}/></button><button onClick={() => addSale(p)} className="flex-1 rounded-xl bg-sky-400 font-semibold text-slate-950"><span className="inline-flex items-center gap-1"><Plus size={18}/> Sell</span></button></div></div></div>)}
-    </div>
+    <div className="glass glow mb-5 rounded-3xl p-5 md:p-6"><div className="mb-3 flex items-center justify-between gap-3"><div><p className="text-[10px] uppercase tracking-[.2em] text-sky-400">Business Day</p><p className="text-sm font-medium">{formatBusinessDay(businessDay)}</p></div><span className="rounded-full border border-white/10 bg-white/[.03] px-3 py-1 text-[10px] text-slate-400">Resets daily · {BUSINESS_DAY_RESET_HOUR}:00 AM</span></div><div className="flex items-start justify-between"><div><p className="text-xs uppercase tracking-widest text-slate-400">Live Daily Sales Total</p><p className="mt-2 text-4xl font-semibold tracking-tight">{money(liveTotal)}</p></div><div className="rounded-2xl border border-sky-400/20 bg-sky-400/10 p-3 text-sky-300"><ShoppingBag/></div></div></div>
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">{products.map((p) => <div key={p.id} className="glass overflow-hidden rounded-3xl p-3"><div className="aspect-[1.35] overflow-hidden rounded-2xl bg-slate-900">{p.image_url ? <img src={p.image_url} alt="" className="h-full w-full object-cover"/> : <div className="grid h-full place-items-center text-slate-600">No image</div>}</div><div className="pt-3"><div className="flex items-start justify-between gap-2"><div><p className="font-medium leading-tight">{p.name}</p><p className="mt-1 text-sm text-slate-400">{money(p.price)}</p></div><span className="rounded-full bg-sky-400/10 px-2 py-1 text-[10px] font-semibold text-sky-300">{p.daily_count} sold</span></div><div className="mt-3 flex gap-2"><button onClick={() => removeSale(p)} disabled={p.daily_count === 0} aria-label={`Remove latest ${p.name} sale`} className="grid h-11 w-11 place-items-center rounded-xl border border-white/10 bg-white/[.03] text-slate-300 disabled:cursor-not-allowed disabled:opacity-30"><Minus size={18}/></button><button onClick={() => addSale(p)} className="flex-1 rounded-xl bg-sky-400 font-semibold text-slate-950"><span className="inline-flex items-center gap-1"><Plus size={18}/> Sell</span></button></div></div></div>)}</div>
     <button onClick={onCustom} className="fixed bottom-24 right-5 rounded-2xl border border-sky-400/30 bg-sky-400 px-4 py-3 font-semibold text-slate-950 shadow-[0_0_28px_rgba(56,189,248,.25)]">+ Custom</button>
   </section>;
 }
@@ -142,35 +121,28 @@ function Analytics({ mode, setMode, dailyDate, setDailyDate, month, setMonth, ye
   const rangeDays = Math.max(1, Math.round((range.end.getTime() - range.start.getTime()) / 86400000));
   const trend = useMemo(() => {
     const buckets = new Map<string, { label: string; revenue: number; profit: number }>();
-    const add = (key: string, label: string, sale: Sale) => {
-      const current = buckets.get(key) ?? { label, revenue: 0, profit: 0 };
-      current.revenue += sale.price_charged;
-      current.profit += sale.profit_recorded;
-      buckets.set(key, current);
-    };
-    sales.forEach((sale) => {
-      const day = businessDayKey(new Date(sale.timestamp));
-      if (mode === 'yearly') {
-        const key = localMonthKey(day);
-        const date = new Date(`${key}-01T12:00:00`);
-        add(key, date.toLocaleDateString('en-IN', { month: 'short' }), sale);
-      } else {
-        add(day, new Date(`${day}T12:00:00`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }), sale);
-      }
-    });
+    const add = (key: string, label: string, sale: Sale) => { const current = buckets.get(key) ?? { label, revenue: 0, profit: 0 }; current.revenue += sale.price_charged; current.profit += sale.profit_recorded; buckets.set(key, current); };
+    sales.forEach((sale) => { const day = businessDayKey(new Date(sale.timestamp)); if (mode === 'yearly') { const key = localMonthKey(day); const date = new Date(`${key}-01T12:00:00`); add(key, date.toLocaleDateString('en-IN', { month: 'short' }), sale); } else add(day, new Date(`${day}T12:00:00`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }), sale); });
     return [...buckets.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, value]) => value);
   }, [mode, sales]);
-
+  const periodStats = useMemo(() => {
+    const periods = [
+      { key: 'early', label: 'Early morning', time: '3 AM – 7 AM', start: 3, end: 7 },
+      { key: 'morning', label: 'Morning', time: '7 AM – 11 AM', start: 7, end: 11 },
+      { key: 'afternoon', label: 'Afternoon', time: '11 AM – 3 PM', start: 11, end: 15 },
+      { key: 'evening', label: 'Evening', time: '3 PM – 7 PM', start: 15, end: 19 },
+      { key: 'night', label: 'Night', time: '7 PM – 11 PM', start: 19, end: 23 },
+      { key: 'late', label: 'Late night', time: '11 PM – 3 AM', start: 23, end: 27 },
+    ];
+    return periods.map((period) => {
+      const matched = sales.filter((sale) => { const d = new Date(sale.timestamp); const hour = d.getHours(); const businessHour = hour < 3 ? hour + 24 : hour; return businessHour >= period.start && businessHour < period.end; });
+      return { ...period, revenue: matched.reduce((sum, sale) => sum + sale.price_charged, 0), transactions: matched.length, profit: matched.reduce((sum, sale) => sum + sale.profit_recorded, 0) };
+    });
+  }, [sales]);
+  const peakPeriod = periodStats.reduce((best, item) => item.revenue > best.revenue ? item : best, periodStats[0]);
   const modeLabel = mode === 'daily' ? 'Daily' : mode === 'monthly' ? 'Monthly' : mode === 'yearly' ? 'Yearly' : 'Custom range';
   return <section>
-    <div className="mb-5">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div><p className="text-xs uppercase tracking-widest text-slate-500">Business-day performance dashboard</p><h2 className="mt-1 text-2xl font-semibold">Analytics</h2></div>
-        <div className="grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-white/[.03] p-1">
-          {(['daily', 'monthly', 'custom', 'yearly'] as AnalyticsMode[]).map((item) => <button key={item} onClick={() => setMode(item)} className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${mode === item ? 'bg-sky-400 text-slate-950' : 'text-slate-400 hover:text-white'}`}>{item[0].toUpperCase() + item.slice(1)}</button>)}
-        </div>
-      </div>
-
+    <div className="mb-5"><div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"><div><p className="text-xs uppercase tracking-widest text-slate-500">Business-day performance dashboard</p><h2 className="mt-1 text-2xl font-semibold">Analytics</h2></div><div className="grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-white/[.03] p-1">{(['daily', 'monthly', 'custom', 'yearly'] as AnalyticsMode[]).map((item) => <button key={item} onClick={() => setMode(item)} className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${mode === item ? 'bg-sky-400 text-slate-950' : 'text-slate-400 hover:text-white'}`}>{item[0].toUpperCase() + item.slice(1)}</button>)}</div></div>
       <div className="mt-4 rounded-3xl border border-white/10 bg-white/[.025] p-4">
         {mode === 'daily' && <div className="flex flex-col gap-2"><label className="text-[10px] uppercase tracking-widest text-slate-500">Business day</label><input type="date" value={dailyDate} onChange={(e) => setDailyDate(e.target.value)} className="w-full rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-sm"/></div>}
         {mode === 'monthly' && <div className="flex flex-col gap-2"><label className="text-[10px] uppercase tracking-widest text-slate-500">Select month</label><input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-full rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-sm"/><p className="text-xs text-slate-500">Includes every business day from 03:00 AM on the 1st through 02:59 AM on the next month.</p></div>}
@@ -178,8 +150,8 @@ function Analytics({ mode, setMode, dailyDate, setDailyDate, month, setMonth, ye
         {mode === 'custom' && <div><div className="grid gap-3 md:grid-cols-2"><div className="flex flex-col gap-2"><label className="text-[10px] uppercase tracking-widest text-slate-500">From</label><input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="w-full rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-sm"/></div><div className="flex flex-col gap-2"><label className="text-[10px] uppercase tracking-widest text-slate-500">To</label><input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="w-full rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-sm"/></div></div><p className="mt-2 text-xs text-slate-500">Custom reports use the same 03:00 AM business-day boundary.</p></div>}
       </div>
     </div>
-
     <div className="grid gap-3 sm:grid-cols-3"><Metric label="Total Revenue" value={money(revenue)}/><Metric label="Total Profit" value={money(profit)}/><Metric label="Transactions" value={sales.length.toLocaleString('en-IN')}/></div>
+    <div className="mt-4 glass rounded-3xl p-5"><div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"><div><div className="flex items-center gap-2"><Clock3 size={18} className="text-sky-300"/><h3 className="font-semibold">Peak sales period</h3></div><p className="mt-1 text-xs text-slate-500">When sales are highest in the selected {modeLabel.toLowerCase()} period</p></div><div className="rounded-2xl border border-sky-400/20 bg-sky-400/10 px-4 py-3"><p className="text-[10px] uppercase tracking-widest text-slate-400">Highest revenue</p><p className="mt-1 text-lg font-semibold text-sky-300">{peakPeriod.label}</p><p className="text-xs text-slate-400">{peakPeriod.time} · {money(peakPeriod.revenue)}</p></div></div><div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{periodStats.map((period) => <div key={period.key} className={`rounded-2xl border p-3 ${period.key === peakPeriod.key ? 'border-sky-400/40 bg-sky-400/10' : 'border-white/5 bg-white/[.025]'}`}><div className="flex items-center justify-between gap-2"><div><p className="font-medium">{period.label}</p><p className="text-[11px] text-slate-500">{period.time}</p></div>{period.key === peakPeriod.key && <span className="rounded-full bg-sky-400 px-2 py-1 text-[9px] font-bold text-slate-950">PEAK</span>}</div><div className="mt-3 flex items-end justify-between"><div><p className="text-lg font-semibold">{money(period.revenue)}</p><p className="text-[11px] text-slate-500">{period.transactions} transactions</p></div><p className="text-xs text-sky-300">Profit {money(period.profit)}</p></div></div>)}</div></div>
     <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_.8fr]">
       <div className="glass rounded-3xl p-5"><div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold">Revenue trend</h3><p className="mt-1 text-xs text-slate-500">{modeLabel} · {rangeDays} day{rangeDays === 1 ? '' : 's'}</p></div><span className="rounded-full bg-sky-400/10 px-3 py-1 text-[10px] font-semibold text-sky-300">{money(revenue)}</span></div><div className="mt-4 h-72">{trend.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={trend}><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.06)"/><XAxis dataKey="label" stroke="#64748b" fontSize={10}/><YAxis stroke="#64748b" fontSize={10}/><Tooltip contentStyle={{ background: '#07101d', border: '1px solid rgba(255,255,255,.1)' }} formatter={(value) => money(Number(value))}/><Bar dataKey="revenue" fill="#38bdf8" radius={[6, 6, 0, 0]}/></BarChart></ResponsiveContainer> : <div className="grid h-full place-items-center text-sm text-slate-500">No sales in this period.</div>}</div></div>
       <div className="glass rounded-3xl p-5"><h3 className="font-semibold">Top selling items</h3><div className="mt-4 h-72">{top.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={top} layout="vertical" margin={{ left: 8, right: 12 }}><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.06)"/><XAxis type="number" stroke="#64748b" fontSize={10}/><YAxis type="category" dataKey="name" width={70} stroke="#64748b" fontSize={10}/><Tooltip contentStyle={{ background: '#07101d', border: '1px solid rgba(255,255,255,.1)' }}/><Bar dataKey="count" fill="#38bdf8" radius={[0, 6, 6, 0]}/></BarChart></ResponsiveContainer> : <div className="grid h-full place-items-center text-sm text-slate-500">No product sales in this period.</div>}</div></div>
