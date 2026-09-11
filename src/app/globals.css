@@ -1,4 +1,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-:root{color-scheme:dark}html,body{min-height:100%;background:#050914}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#f4f7fb}*{box-sizing:border-box}.glass{background:linear-gradient(180deg,rgba(13,22,39,.88),rgba(7,13,25,.88));border:1px solid rgba(67,151,235,.16);backdrop-filter:blur(16px)}.glow{box-shadow:0 0 0 1px rgba(46,168,255,.14),0 0 32px rgba(46,168,255,.08)}
+
+:root{color-scheme:dark}
+html,body{min-height:100%;background:#050914}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#f4f7fb;overflow:hidden}
+*{box-sizing:border-box}
+.glass{background:linear-gradient(180deg,rgba(13,22,39,.88),rgba(7,13,25,.88));border:1px solid rgba(67,151,235,.16);backdrop-filter:blur(16px)}
+.glow{box-shadow:0 0 0 1px rgba(46,168,255,.14),0 0 32px rgba(46,168,255,.08)}
+
+/* Keep the POS inside the mobile viewport. Only the app content scrolls. */
+main.min-h-screen{height:100dvh;min-height:100dvh;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;padding-bottom:max(7rem,calc(env(safe-area-inset-bottom) + 6rem))!important;-webkit-overflow-scrolling:touch}
+
+/* The custom-item action belongs below the product grid, so it can never cover a product's Sell button. */
+button.fixed.bottom-24.right-5{position:static!important;display:block;margin:1rem 0 0 auto;right:auto!important;bottom:auto!important}
+
+/* iPhone safe-area support for the persistent navigation. */
+nav.fixed.bottom-0{padding-bottom:env(safe-area-inset-bottom)}
