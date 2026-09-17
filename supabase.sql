@@ -27,6 +27,20 @@ create policy "public manage products" on products for all using (true) with che
 create policy "public read sales" on sales for select using (true);
 create policy "public manage sales" on sales for all using (true) with check (true);
 
+-- Product images are public media served by Supabase Storage.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('product-images', 'product-images', true, 5242880, array['image/*'])
+on conflict (id) do update set public = true, file_size_limit = 5242880, allowed_mime_types = array['image/*'];
+
+create policy "public product image uploads" on storage.objects
+for insert with check (bucket_id = 'product-images');
+
+create policy "public product image updates" on storage.objects
+for update using (bucket_id = 'product-images') with check (bucket_id = 'product-images');
+
+create policy "public product image deletes" on storage.objects
+for delete using (bucket_id = 'product-images');
+
 -- Purabi Corner business day convention:
 -- 03:00 local store time through 02:59:59 the following calendar day.
 -- The reset is a query boundary. Historical rows are retained.
