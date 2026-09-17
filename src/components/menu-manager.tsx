@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
-import { ImagePlus, Loader2, Settings2, Trash2, X } from 'lucide-react';
+import { Camera, ImagePlus, Loader2, Settings2, Trash2, X } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
 
@@ -21,7 +21,8 @@ export default function MenuManager({ products, setProducts, editing, setEditing
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setDraft(editing ?? blank);
@@ -36,7 +37,8 @@ export default function MenuManager({ products, setProducts, editing, setEditing
     setPreview('');
     setFile(null);
     setError('');
-    if (inputRef.current) inputRef.current.value = '';
+    if (galleryRef.current) galleryRef.current.value = '';
+    if (cameraRef.current) cameraRef.current.value = '';
   };
 
   const choose = (selected?: File) => {
@@ -64,6 +66,7 @@ export default function MenuManager({ products, setProducts, editing, setEditing
     setError('');
 
     try {
+      if (!supabase) throw new Error('Supabase is not configured.');
       let imageUrl = draft.image_url || null;
 
       if (file) {
@@ -108,6 +111,7 @@ export default function MenuManager({ products, setProducts, editing, setEditing
   };
 
   const remove = async (product: Product) => {
+    if (!supabase) return;
     setBusy(true);
     setError('');
     const { error: deleteError } = await supabase.from('products').delete().eq('id', product.id);
@@ -140,16 +144,28 @@ export default function MenuManager({ products, setProducts, editing, setEditing
               <input type="number" min="0" step="0.01" value={draft.profit_margin || ''} onChange={(event) => setDraft({ ...draft, profit_margin: Number(event.target.value) })} placeholder="Profit" className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 outline-none focus:border-sky-400/40" />
             </div>
 
-            <input ref={inputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => choose(event.target.files?.[0])} />
-            <button type="button" onClick={() => inputRef.current?.click()} className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-sky-400/30 bg-sky-400/[0.05] p-3 text-left hover:bg-sky-400/[0.08]">
-              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-slate-900">
-                {preview ? <img src={preview} alt="Preview" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center"><ImagePlus className="text-sky-300" /></div>}
+            <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={(event) => choose(event.target.files?.[0])} />
+            <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => choose(event.target.files?.[0])} />
+
+            <div className="rounded-2xl border border-dashed border-sky-400/30 bg-sky-400/[0.05] p-3">
+              <div className="flex items-center gap-3">
+                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-slate-900">
+                  {preview ? <img src={preview} alt="Preview" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center"><ImagePlus className="text-sky-300" /></div>}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">{preview ? 'Change image' : 'Add product image'}</p>
+                  <p className="text-xs text-slate-500">Choose from Photos or take a new photo · max 5 MB</p>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="font-medium">{preview ? 'Change image' : 'Add image'}</p>
-                <p className="text-xs text-slate-500">Gallery or camera · max 5 MB</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => galleryRef.current?.click()} className="flex items-center justify-center gap-2 rounded-xl bg-sky-400 px-3 py-2.5 text-sm font-semibold text-slate-950 hover:bg-sky-300">
+                  <ImagePlus size={16} /> Photos
+                </button>
+                <button type="button" onClick={() => cameraRef.current?.click()} className="flex items-center justify-center gap-2 rounded-xl border border-white/10 px-3 py-2.5 text-sm font-medium hover:bg-white/[0.05]">
+                  <Camera size={16} /> Camera
+                </button>
               </div>
-            </button>
+            </div>
 
             {preview && <button type="button" onClick={() => { setPreview(''); setFile(null); setDraft({ ...draft, image_url: null }); }} className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-white"><X size={14} />Remove image</button>}
             {error && <p className="rounded-xl bg-red-400/10 px-3 py-2 text-xs text-red-300">{error}</p>}
