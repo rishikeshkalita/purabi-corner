@@ -11,6 +11,7 @@ create table if not exists products (
 create table if not exists sales (
   id uuid primary key default gen_random_uuid(),
   product_id uuid references products(id) on delete set null,
+  product_name text not null default 'Custom Item',
   timestamp timestamptz not null default now(),
   price_charged numeric(12,2) not null check (price_charged >= 0),
   profit_recorded numeric(12,2) not null default 0 check (profit_recorded >= 0)
