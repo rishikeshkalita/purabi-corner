@@ -185,7 +185,7 @@ export default function PosApp() {
 
     const [productResult, saleResult] = await Promise.all([
       supabase.from('products').select('*').order('name'),
-      supabase.from('sales').select('*').order('timestamp', { ascending: false }),
+      supabase.from('sales').select('id,product_id,product_name,timestamp,price_charged,profit_recorded').order('timestamp', { ascending: false }),
     ]);
 
     if (productResult.error || saleResult.error) {
@@ -543,7 +543,7 @@ function Counter({
                   {product.image_url ? <img src={product.image_url} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-slate-700"><ImagePlus size={22} /></div>}
                 </div>
                 <p className="mt-2 line-clamp-2 min-h-[2.2rem] text-xs font-semibold leading-4 sm:text-sm">{product.name}</p>
-                <p className="mt-1 text-[11px] text-slate-500 sm:text-xs">{money(product.price)}</p>
+                <p className="mt-2 inline-flex rounded-lg border border-sky-400/20 bg-sky-400/10 px-2.5 py-1 text-sm font-bold tracking-tight text-sky-300 shadow-[0_0_18px_rgba(89,184,244,.08)] sm:text-base">{money(product.price)}</p>
                 <div className="mt-2 flex gap-1">
                   <button onClick={() => remove(product)} disabled={!count || busy} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/10 text-slate-300 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-20 sm:h-10 sm:w-10" aria-label={`Remove latest ${product.name} sale`}><Minus size={15} /></button>
                   <button onClick={() => add(product)} disabled={busy} className="min-w-0 flex-1 rounded-xl bg-sky-400 px-1 text-[11px] font-bold text-slate-950 transition hover:bg-sky-300 disabled:opacity-50">{busy ? '…' : <><Plus size={14} className="mr-0.5 inline" />Sell</>}</button>
