@@ -145,7 +145,7 @@ export default function MenuManager({ products, setProducts, editing, setEditing
             </div>
 
             <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={(event) => choose(event.target.files?.[0])} />
-            <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => choose(event.target.files?.[0])} />
+            <input ref={cameraRef} type="file" accept="image/*" className="hidden" onChange={(event) => choose(event.target.files?.[0])} />
 
             <div className="rounded-2xl border border-dashed border-sky-400/30 bg-sky-400/[0.05] p-3">
               <div className="flex items-center gap-3">
